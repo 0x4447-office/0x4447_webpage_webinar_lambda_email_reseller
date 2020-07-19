@@ -1,6 +1,6 @@
-# Title me
+# Email Reseller
 
-Describe me
+Autoamte the process of sending out a new reseller subscription.
 
 # Environment variables
 
@@ -8,6 +8,8 @@ Copy&Paste the following command to create the `.env` file with all the environm
 
 ```
 printf "%s\n" \
+EMAIL_AWS=DATA \
+EMAIL_WE=DATA \
 AWS_ACCESS_KEY_ID=DATA \
 AWS_SECRET_ACCESS_KEY=DATA \
 >> .env
