@@ -39,6 +39,23 @@ exports.handler = (event) => {
 				we: process.env.EMAIL_WE,
 				aws: process.env.EMAIL_AWS
 			},
+			form_structure: {
+				resellerName: "",
+				resellerAccount: "",
+				customerName: "",
+				customerAccount: "",
+				productName: "",
+				productLink: "",
+				percentDiscount: "20%",
+				priceExtended: "",
+				customerPrice: "",
+				paymentSchedule: "",
+				customTerms: "",
+				renewal: "New Sale",
+				additionalInfo: "",
+				ISVname: "0x4447 LLC",
+				authorizingIndividual: "Dawid Gatti"
+			},
 			templates: templates,
 			form: JSONfn.parse(JSONfn.stringify(form)),
 			unescaped_key: null,
@@ -66,6 +83,14 @@ exports.handler = (event) => {
 			.then(function(container) {
 
 				return load_object(container);
+
+			}).then(function(container) {
+
+				return format_converter(container);
+
+			}).then(function(container) {
+
+				return fill_the_form(container);
 
 			}).then(function(container) {
 
@@ -199,6 +224,113 @@ function load_object(container)
 			return resolve(container);
 		
 		});
+
+	});
+}
+
+//
+//	Prepare the data and convert it in to the right maps
+//	so it can be used in the PDF template.
+//
+function format_converter(container)
+{
+	return new Promise(function(resolve, reject) {
+
+		console.info("format_converter");
+
+		//
+		//	1.	Holds the data to be converted in to a single string
+		//
+		let product_name = [];
+		let url = [];
+
+		//
+		//	2.	Loop over the array and move data from one array to the the above.
+		//
+		container.reseller_details.selected_products.forEach(function(product) {
+
+			product_name.push(product.name);
+			url.push('https://aws.amazon.com/marketplace/pp/' + product.id);
+
+		});
+
+		//
+		//	3.	Take the arrays and convert them in to a single string so 
+		//		it can be easelly added to the PDF.
+		//
+		container.form_structure.productName = product_name.join(', ');
+		container.form_structure.productLink = url.join(', ');
+
+		//
+		//	4.	Make the reseller name.
+		//
+		container.form_structure.resellerName = container.reseller_details.first_name 
+											  + ' ' 
+											  + container.reseller_details.last_name;
+
+		//
+		//	5.	Set the Reseller AWS Account name.
+		//	
+		container.form_structure.resellerAccount = container.reseller_details.authorized_reseller_aws_account_id
+
+		//
+		//	->	Move to the next chain.
+		//
+		return resolve(container);
+
+	});
+}
+
+//
+//	Set the data passed b the reseller in to the form.
+//
+function fill_the_form(container)
+{
+	return new Promise(function(resolve, reject) {
+
+		console.info("fill_the_form");
+
+		//
+		//	1.	Start the crawler
+		//
+		crawler(container.form.document.content)
+
+		//
+		//	-- 	this function crawls the template to look for charts and
+		//		then replace the place holder with real SVG data.
+		//
+		function crawler(data)
+		{
+			for(let key in data)
+			{
+				if(data[key].table)
+				{
+					crawler(data[key].table)
+				}
+
+				if(data[key].body)
+				{
+					crawler(data[key].body)
+				}
+				
+				if(Array.isArray(data[key]))
+				{
+					crawler(data[key])
+				}
+
+				//
+				//	Only work with objects that have 'fieldName' tag.
+				if(data[key].fieldName)
+				{					
+					data[key].text = container.form_structure[data[key].fieldName]	
+				}
+			}
+		}
+
+		//
+		//	->	Move to the next chain.
+		//
+		return resolve(container);
 
 	});
 }

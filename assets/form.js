@@ -59,7 +59,10 @@ exports.document = {
 							text: "Authorized Reseller Name(s)",
 							style: "subheader",
 						},
-						{ text: "", fieldName: "resellerName", style: "paragraph" },
+						{ 
+							text: "", 
+							fieldName: "resellerName", style: "paragraph" 
+						},
 					],
 					[
 						{
